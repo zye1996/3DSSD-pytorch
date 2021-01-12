@@ -1,6 +1,7 @@
 import torch.nn as nn
+import torch.nn.functional as F
 import torch
-from core.config import cfg
+from lib.core.config import cfg
 from lib.builder.anchor_builder import Anchors
 from lib.builder.encoder_builder import EncoderDecoder
 from lib.builder.layer_builder import LayerBuilder
@@ -12,13 +13,12 @@ from lib.builder.postprocessor import PostProcessor
 import os
 
 
-import dataset.maps_dict as maps_dict
+import lib.dataset.maps_dict as maps_dict
 
 from lib.utils.box_3d_utils import transfer_box3d_to_corners_torch
 
 
 # TODO: put bn_decay into init
-
 
 
 class SingleStageDetector(nn.Module):
@@ -45,7 +45,8 @@ class SingleStageDetector(nn.Module):
         layers = []
         for i in range(len(layer_cfg)):
             layers.append(LayerBuilder(i, self.is_training, layer_cfg))
-            if layers[-1].layer_type == 'Vote_Layer': self.vote_loss = True
+            if layers[-1].layer_type == 'Vote_Layer':
+                self.vote_loss = True
         self.layers = nn.Sequential(*layers)
 
         # head builder

@@ -14,7 +14,7 @@ from lib.utils.model_util import calc_square_dist, nn_distance
 # from utils.tf_ops.grouping.tf_grouping import *
 # from utils.tf_ops.sampling.tf_sampling import *
 # from utils.tf_ops.interpolation.tf_interpolate import *
-from core.config import cfg
+from lib.core.config import cfg
 
 
 def vote_layer_funciton(xyz, points, mlp_list, is_training, bn_decay, bn, scope):

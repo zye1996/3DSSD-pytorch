@@ -2,7 +2,7 @@ import numpy as np
 # import tensorflow as tf
 import torch
 
-# from core.config import cfg
+# from lib.core.config import cfg
 
 ###########################################################
 # Encode Angle 

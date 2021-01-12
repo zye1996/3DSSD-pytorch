@@ -1,13 +1,13 @@
 import tensorflow as tf
 import numpy as np
 # import utils.tf_util as tf_util
-import dataset.maps_dict as maps_dict
+import lib.dataset.maps_dict as maps_dict
 import torch
 import torch.nn as nn
 import lib.pointnet2.pytorch_utils as pt_utils
 
 from functools import partial
-from core.config import cfg
+from lib.core.config import cfg
 
 
 def box_regression_head_tf(feature_input, pred_cls_channel, pred_reg_base_num, pred_reg_channel_num, bn, is_training, pred_attr_velo, conv_op, bn_decay, output_dict):

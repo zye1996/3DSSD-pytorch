@@ -1,7 +1,7 @@
 import numpy as np
 import numba
 
-from core.config import cfg
+from lib.core.config import cfg
 
 def noise_per_object_v3_(gt_boxes,
                          points=None,
@@ -312,6 +312,7 @@ def box_3d_collision_test_nusc(boxes, q_boxes, classes, q_classes, boxes_points,
 
     return q_boxes, q_classes, points, attributes, velocity, cur_sample_num 
 
+
 def check_inside_points(points, cur_boxes):
     """
     points: [num, n]
@@ -525,6 +526,7 @@ def box2d_to_corner_jit(boxes):
         box_corners[i] = corners[i] @ rot_mat_T + boxes[i, :2]
     return box_corners
 
+
 @numba.jit(nopython=False)
 def points_in_convex_polygon_3d_jit(points,
                                     polygon_surfaces,
@@ -546,6 +548,7 @@ def points_in_convex_polygon_3d_jit(points,
     num_polygons = polygon_surfaces.shape[0]
     num_surfaces = np.full((num_polygons,), 9999999, dtype=np.int64)
     normal_vec, d = surface_equ_3d_jit(polygon_surfaces[:, :, :3, :])
+
     # normal_vec: [num_polygon, max_num_surfaces, 3]
     # d: [num_polygon, max_num_surfaces]
     ret = np.ones((num_points, num_polygons), dtype=np.bool_)
@@ -561,6 +564,7 @@ def points_in_convex_polygon_3d_jit(points,
                 if sign >= 0:
                     ret[i, j] = False
                     break
+
     return ret
 
 @numba.jit(nopython=True)
@@ -770,6 +774,7 @@ def center_to_corner_box3d(centers,
     # yzx(hwl)(kitti label file)<->xyz(lhw)(camera)<->z(-x)(-y)(wlh)(lidar)
     # center in kitti format is [0.5, 1.0, 0.5] in xyz.
     corners = corners_nd(dims, origin=origin)
+
     # corners: [N, 8, 3]
     if angles is not None:
         corners = rotation_3d_in_axis(corners, angles, axis=axis)

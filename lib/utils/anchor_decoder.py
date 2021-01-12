@@ -2,7 +2,7 @@ import numpy as np
 # import tensorflow as tf
 import torch
 
-from core.config import cfg
+from lib.core.config import cfg
 
 def decode_class2angle(pred_cls, pred_res_norm, bin_size, bin_interval, bin_offset=0.):
     """

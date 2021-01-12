@@ -9,6 +9,7 @@ import numba
 import numpy as np
 from numba import cuda
 
+
 @numba.jit(nopython=True)
 def div_up(m, n):
     return m // n + (m % n > 0)
@@ -258,6 +259,7 @@ def devRotateIoUEval(rbox1, rbox2, criterion=-1):
     else:
         return area_inter
 
+
 @cuda.jit('(int64, int64, float32[:], float32[:], float32[:], int32)', fastmath=False)
 def rotate_iou_kernel_eval(N, K, dev_boxes, dev_query_boxes, dev_iou, criterion=-1):
     threadsPerBlock = 8 * 8
@@ -283,6 +285,7 @@ def rotate_iou_kernel_eval(N, K, dev_boxes, dev_query_boxes, dev_iou, criterion=
         block_boxes[tx * 5 + 2] = dev_boxes[dev_box_idx * 5 + 2]
         block_boxes[tx * 5 + 3] = dev_boxes[dev_box_idx * 5 + 3]
         block_boxes[tx * 5 + 4] = dev_boxes[dev_box_idx * 5 + 4]
+
     cuda.syncthreads()
     if tx < row_size:
         for i in range(col_size):

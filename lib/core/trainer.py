@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings('ignore')
+
 import os, sys
 import argparse
 from torch.utils.data import DataLoader
@@ -13,8 +16,8 @@ from torch.nn.utils import clip_grad_norm_
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
-from core.config import cfg, cfg_from_file, cfg_from_list, assert_and_infer_cfg
-from dataset.dataloader import choose_dataset
+from lib.core.config import cfg, cfg_from_file, cfg_from_list, assert_and_infer_cfg
+from lib.dataset.dataloader import choose_dataset
 
 from lib.modeling import choose_model
 from lib.core.trainer_utils import LRScheduler, save_checkpoint, checkpoint_state
@@ -92,7 +95,7 @@ class trainer:
         self.tb_log = SummaryWriter(log_dir=os.path.join(self.log_dir, 'tensorboard'))
 
         # optimizer
-        self.optimizer = optim.Adam(self.model.parameters(), lr=cfg.SOLVER.BASE_LR)
+        self.optimizer = optim.AdamW(self.model.parameters(), lr=cfg.SOLVER.BASE_LR)
         self.lr_scheduler = LRScheduler(self.optimizer)
 
         # load from checkpoint
@@ -169,8 +172,6 @@ class trainer:
                     save_checkpoint(
                         checkpoint_state(self.model, self.optimizer, trained_epoch, accumulated_iter), filename=ckpt_name,
                     )
-
-
 
 
 if __name__ == '__main__':

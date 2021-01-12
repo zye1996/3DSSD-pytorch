@@ -5,7 +5,7 @@ import torch
 
 from lib.utils.layers_util import Pointnet_sa_module_msg, Vote_layer
 
-import dataset.maps_dict as maps_dict
+import lib.dataset.maps_dict as maps_dict
 
 
 class LayerBuilder(nn.Module):
@@ -63,6 +63,7 @@ class LayerBuilder(nn.Module):
         """
         Build layers
         """
+
         xyz_input = []
         for xyz_index in self.xyz_index:
             xyz_input.append(xyz_list[xyz_index])
@@ -78,7 +79,8 @@ class LayerBuilder(nn.Module):
 
         if self.vote_ctr_index != -1:
             vote_ctr = xyz_list[self.vote_ctr_index]
-        else: vote_ctr = None
+        else:
+            vote_ctr = None
 
         if self.layer_type == 'SA_Layer':
             new_xyz, new_points, new_fps_idx = self.layer_module(xyz_input[0], feature_input[0], former_fps_idx, vote_ctr)

@@ -1,9 +1,10 @@
 import tensorflow as tf
 import numpy as np
 
-from core.config import cfg
+from lib.core.config import cfg
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 # from utils.box_3d_utils import transfer_box3d_to_corners
 # from utils.tf_ops.sampling.tf_sampling import gather_point
 # from utils.tf_ops.evaluation.tf_evaluate import calc_iou_match_warper
@@ -11,7 +12,7 @@ import torch.nn as nn
 # from np_functions.gt_sampler import vote_targets_np
 
 # import utils.model_util as model_util
-import dataset.maps_dict as maps_dict
+import lib.dataset.maps_dict as maps_dict
 from lib.utils.rotation_util import rotate_points_torch
 import torch.nn as nn
 from lib.utils.voxelnet_aug import check_inside_points
@@ -89,8 +90,12 @@ class LossBuilder:
 
         norm_param = torch.clamp(torch.sum(cls_mask), min=1.0)
 
-        # if self.cls_activation == 'Sigmoid':
-        #     gt_cls = tf.cast(tf.one_hot(gt_cls - 1, depth=len(self.cls_list), on_value=1, off_value=0, axis=-1), tf.float32)
+        #if self.cls_activation == 'Sigmoid':
+        #    print(gt_cls.dtype)
+        #    gt_cls_ = F.one_hot(gt_cls, num_classes=len(self.cls_list)+1)
+        #    # gt_cls_ = tf.cast(tf.one_hot((gt_cls - 1).cpu().numpy(), depth=len(self.cls_list), on_value=1, off_value=0, axis=-1), tf.float32)
+        #    # with tf.Session() as sess:  print(gt_cls_.eval())
+        #    print(gt_cls_)
 
         if self.cls_loss_type == 'Is-Not': # Is or Not
             if self.cls_activation == 'Softmax':
@@ -108,8 +113,9 @@ class LossBuilder:
             # base_xyz = tf.stop_gradient(base_xyz)
             assigned_boxes_3d = end_points[maps_dict.GT_BOXES_ANCHORS_3D][index]
             ctr_ness = self._generate_centerness_label(base_xyz, assigned_boxes_3d, pmask)
+            # TODO: not sure this is correct if gt_cls can be greater than 1
             gt_cls = (gt_cls.float() * ctr_ness).unsqueeze(-1)
-            cls_loss = self.sigmoid_cross_entropy_with_logits(gt_cls, pred_cls)
+            cls_loss = F.binary_cross_entropy_with_logits(pred_cls, gt_cls)
             cls_loss = torch.mean(cls_loss, dim=-1)
 
         cls_loss = torch.sum(cls_loss * cls_mask) / norm_param
@@ -146,11 +152,11 @@ class LossBuilder:
         distance_left = assigned_boxes_3d[:, :, 5] / 2. - canonical_xyz[:, :, 2]
         distance_right = canonical_xyz[:, :, 2] + assigned_boxes_3d[:, :, 5] / 2.
 
-        ctr_ness_l = torch.where(distance_front < distance_back, distance_front, distance_back) / torch.where(distance_front > distance_back, distance_front, distance_back)
-        ctr_ness_w = torch.where(distance_left < distance_right, distance_left, distance_right) / torch.where(distance_left > distance_right, distance_left, distance_right)
-        ctr_ness_h = torch.where(distance_bottom < distance_top, distance_bottom, distance_top) / torch.where(distance_bottom > distance_top, distance_bottom, distance_top)
+        ctr_ness_l = torch.minimum(distance_front, distance_back) / torch.maximum(distance_front, distance_back)
+        ctr_ness_w = torch.minimum(distance_left, distance_right) / torch.maximum(distance_left, distance_right)
+        ctr_ness_h = torch.minimum(distance_bottom, distance_top) / torch.maximum(distance_bottom, distance_top)
         ctr_ness = torch.clamp(ctr_ness_l * ctr_ness_h * ctr_ness_w * pmask, min=epsilon)
-        ctr_ness = torch.pow(ctr_ness, 1/3) # [bs, points_num]
+        ctr_ness = torch.pow(ctr_ness, 1/3.0) # [bs, points_num]
 
         min_ctr_ness, max_ctr_ness = self.ctr_ness_range
         ctr_ness_range = max_ctr_ness - min_ctr_ness 

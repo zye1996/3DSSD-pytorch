@@ -13,8 +13,8 @@ from torch.nn.utils import clip_grad_norm_
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
-from core.config import cfg, cfg_from_file, cfg_from_list, assert_and_infer_cfg
-from dataset.dataloader import choose_dataset
+from lib.core.config import cfg, cfg_from_file, cfg_from_list, assert_and_infer_cfg
+from lib.dataset.dataloader import choose_dataset
 
 from lib.modeling import choose_model
 from lib.core.trainer_utils import LRScheduler, save_checkpoint, checkpoint_state
@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument('--split', default='training', help='Dataset split')
 
     # some evaluation threshold
-    parser.add_argument('--cls_threshold', default=0.3, help='Filtering Predictions')
+    parser.add_argument('--cls_threshold', default=0, help='Filtering Predictions')
     parser.add_argument('--eval_interval_secs', default=300, help='Sleep after one evaluation loop')
     parser.add_argument('--no_gt', action='store_true', help='Used for test set')
     args = parser.parse_args()
@@ -127,7 +127,6 @@ class Evaluator:
         progress_bar.close()
 
         self.logger.info('*************** Performance of %s *****************' % ckpt_file)
-
         result_str, result_dict = self.dataset.evaluation(det_annos, gt_annos)
 
         self.logger.info(result_str)

@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 import torch.utils.data as torch_data
-from core.config import cfg
+from lib.core.config import cfg
 import lib.utils.kitti_object as kitti_object
 import lib.dataset.maps_dict as maps_dict
 from lib.utils.anchor_encoder import encode_angle2class_np
@@ -118,7 +118,7 @@ class KittiDataset(torch_data.Dataset):
         cur_npy = self.train_npy_list[sample_idx]
 
         cur_npy_path = os.path.join(self.sv_npy_path, cur_npy)
-        sample_dict = np.load(cur_npy_path).tolist()
+        sample_dict = np.load(cur_npy_path, allow_pickle=True).tolist()
 
         sem_labels = sample_dict[maps_dict.KEY_LABEL_SEMSEG]
         sem_dists = sample_dict[maps_dict.KEY_LABEL_DIST]
@@ -457,7 +457,7 @@ class KittiDataset(torch_data.Dataset):
 
     # Evaluation
 
-    def generate_annotations(self, input_dict, pred_dicts, class_names, cls_thresh=0.001, save_to_file=False, output_dir=None):
+    def generate_annotations(self, input_dict, pred_dicts, class_names, cls_thresh=0.0005, save_to_file=False, output_dir=None):
         def get_empty_prediction():
             ret_dict = {
                 'name': np.array([]), 'truncated': np.array([]), 'occluded': np.array([]),
@@ -605,7 +605,6 @@ class KittiDataset(torch_data.Dataset):
 
     def evaluation(self, det_annos, gt_annos):
         import lib.dataset.kitti_object_eval_python.eval as kitti_eval
-
         eval_det_annos = copy.deepcopy(det_annos)
         eval_gt_annos = copy.deepcopy(gt_annos)
         ap_result_str, ap_dict = kitti_eval.get_official_eval_result(eval_gt_annos, eval_det_annos, self.cls_list)
