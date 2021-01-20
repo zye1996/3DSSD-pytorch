@@ -14,7 +14,7 @@ from lib.builder.target_assigner import TargetAssigner
 def my_worker_init_fn(worker_id):
     np.random.seed(np.random.get_state()[1][0] + worker_id)
 
-cfg_from_file("configs/kitti/3dssd/3dssd.yaml")
+cfg_from_file("../configs/kitti/3dssd/3dssd.yaml")
 dataset_func = choose_dataset()
 dataset = dataset_func('loading', split="training", img_list="train", is_training=True)
 dataloader = DataLoader(dataset, batch_size=2, shuffle=True, num_workers=6, worker_init_fn=my_worker_init_fn,  collate_fn=dataset.load_batch)
