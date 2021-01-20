@@ -301,7 +301,6 @@ class KittiDataset(torch_data.Dataset):
 
         return feed_dict
 
-
     # Preprocess data
     def preprocess_samples(self, indices):
         sample_dicts = []
@@ -453,7 +452,6 @@ class KittiDataset(torch_data.Dataset):
                         f.write('%06d.npy\n' % tmp_idx)
                         np.save(os.path.join(cur_mixup_db_cls_path, '%06d.npy' % tmp_idx), tmp_cur_mixup_sample_dict)
         print('Ending of the preprocess !!!')
-
 
     # Evaluation
 

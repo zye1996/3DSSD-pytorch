@@ -2,7 +2,6 @@ import numba
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.framework import ops
-import tensorflow.contrib.slim as slim
 import torch
 import os
 import sys

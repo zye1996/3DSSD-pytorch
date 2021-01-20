@@ -14,7 +14,6 @@ import torch.nn.functional as F
 # import utils.model_util as model_util
 import lib.dataset.maps_dict as maps_dict
 from lib.utils.rotation_util import rotate_points_torch
-import torch.nn as nn
 from lib.utils.voxelnet_aug import check_inside_points
 
 

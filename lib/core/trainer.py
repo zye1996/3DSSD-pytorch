@@ -45,7 +45,6 @@ def parse_args():
     return args
 
 
-
 class trainer:
     def __init__(self, args):
         self.batch_size = cfg.TRAIN.CONFIG.BATCH_SIZE
@@ -85,6 +84,7 @@ class trainer:
         self.dataset = dataset_func('loading', split=args.split, img_list=args.img_list, is_training=self.is_training)
         self.dataloader = DataLoader(self.dataset, batch_size=self.batch_size*self.gpu_num, shuffle=True, num_workers=self.num_workers, worker_init_fn=my_worker_init_fn,  collate_fn=self.dataset.load_batch)
         self.logger.info('**** Dataset length is %d ****' % len(self.dataset))
+        print(type(next(iter(self.dataloader))))
 
         # models
         self.model_func = choose_model()
@@ -93,9 +93,16 @@ class trainer:
 
         # tensorboard
         self.tb_log = SummaryWriter(log_dir=os.path.join(self.log_dir, 'tensorboard'))
+        sample = next(iter(self.dataloader))
+        sample.pop('sample_name')
+        for key in sample:
+            if isinstance(sample[key], torch.Tensor):
+                sample[key] = sample[key].cuda()
+        print(sample.keys())
+        self.tb_log.add_graph(self.model, sample)
 
         # optimizer
-        self.optimizer = optim.AdamW(self.model.parameters(), lr=cfg.SOLVER.BASE_LR)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=cfg.SOLVER.BASE_LR)
         self.lr_scheduler = LRScheduler(self.optimizer)
 
         # load from checkpoint
@@ -128,7 +135,7 @@ class trainer:
             end_points = self.model(batch_data_label)
             total_loss, disp_dict = compute_loss(end_points)
             total_loss.backward()
-            clip_grad_norm_(self.model.parameters(), 5.0)
+            total_norm = clip_grad_norm_(self.model.parameters(), 5.0)
             self.optimizer.step()
 
             self.lr_scheduler.step(accumulated_iter)
@@ -139,6 +146,7 @@ class trainer:
 
             if self.tb_log is not None:
                 self.tb_log.add_scalar('learning_rate', cur_lr, accumulated_iter)
+                self.tb_log.add_scalar('norm_grad', total_norm, accumulated_iter)
                 for key in disp_dict:
                     if 'loss' in key:
                         self.tb_log.add_scalar(key, disp_dict[key].item(), accumulated_iter)

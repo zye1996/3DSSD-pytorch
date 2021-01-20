@@ -55,7 +55,7 @@ MODEL:
          -1, False, 'SA_Layer', 'layer2', True, -1, 128], # layer2
         [[2], [2], [1.6,3.2,4.8], [32,32,32], [[128,128,256], [128,192,256], [128,256,256]], True,
          [512, -1], ['F-FPS', 'D-FPS'], [256, 256],
-         -1, False, 'SA_Layer', 'layer3', True, -1, 256], # layer3 
+         -1, False, 'SA_Layer', 'layer3', True, -1, 256], # layer3
         # vote
         [[3], [3], [], [], [], True,
          [256, -1], ['F-FPS', 'D-FPS'], [256, 0],

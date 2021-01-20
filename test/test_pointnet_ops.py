@@ -1,7 +1,8 @@
 import torch
 import pytest
 
-from lib.pointnet2.pointnet2_utils import FurthestPointSampling, BallQuery, grouping_operation
+from lib.pointnet2.pointnet2_utils import FurthestPointSampling, furthest_point_sample_with_dist, \
+                                          BallQuery, grouping_operation, gather_operation, ball_query_dilated
 
 
 def test_fps():
@@ -20,6 +21,34 @@ def test_fps():
     expected_idx = torch.tensor([[0, 2, 4], [0, 2, 1]]).cuda()
     assert torch.all(idx == expected_idx)
 
+def test_fps_with_dist():
+    if not torch.cuda.is_available():
+        pytest.skip()
+    xyz = torch.tensor([[[-0.2748, 1.0020, -1.1674], [0.1015, 1.3952, -1.2681],
+                         [-0.8070, 2.4137,
+                          -0.5845], [-1.0001, 2.1982, -0.5859],
+                         [0.3841, 1.8983, -0.7431]],
+                        [[-1.0696, 3.0758,
+                          -0.1899], [-0.2559, 3.5521, -0.1402],
+                         [0.8164, 4.0081, -0.1839], [-1.1000, 3.0213, -0.8205],
+                         [-0.0518, 3.7251, -0.3950]]]).cuda()
+
+    expected_idx = torch.tensor([[0, 2, 4], [0, 2, 1]]).cuda()
+    xyz_square_dist = ((xyz.unsqueeze(dim=1) -
+                        xyz.unsqueeze(dim=2))**2).sum(-1)
+    idx = furthest_point_sample_with_dist(xyz_square_dist, 3)
+    assert torch.all(idx == expected_idx)
+
+    import numpy as np
+    fps_idx = np.load('data/ops/fps_idx.npy')
+    features_for_fps_distance = np.load(
+        'data/ops/features_for_fps_distance.npy')
+    expected_idx = torch.from_numpy(fps_idx).cuda()
+    features_for_fps_distance = torch.from_numpy(
+        features_for_fps_distance).cuda()
+
+    idx = furthest_point_sample_with_dist(features_for_fps_distance, 16)
+    assert torch.all(idx == expected_idx)
 
 def test_ball_query():
     if not torch.cuda.is_available():
@@ -60,6 +89,45 @@ def test_ball_query():
                                   [0, 0, 0, 0, 0]]]).cuda()
     assert torch.all(idx == expected_idx)
 
+def test_ball_query_dilated():
+    if not torch.cuda.is_available():
+        pytest.skip()
+    new_xyz = torch.tensor([[[-0.0740, 1.3147, -1.3625],
+                             [-2.2769, 2.7817, -0.2334],
+                             [-0.4003, 2.4666, -0.5116],
+                             [-0.0740, 1.3147, -1.3625],
+                             [-0.0740, 1.3147, -1.3625]],
+                            [[-2.0289, 2.4952, -0.1708],
+                             [-2.0668, 6.0278, -0.4875],
+                             [0.4066, 1.4211, -0.2947],
+                             [-2.0289, 2.4952, -0.1708],
+                             [-2.0289, 2.4952, -0.1708]]]).cuda()
+
+    xyz = torch.tensor([[[-0.0740, 1.3147, -1.3625], [0.5555, 1.0399, -1.3634],
+                         [-0.4003, 2.4666,
+                          -0.5116], [-0.5251, 2.4379, -0.8466],
+                         [-0.9691, 1.1418,
+                          -1.3733], [-0.2232, 0.9561, -1.3626],
+                         [-2.2769, 2.7817, -0.2334],
+                         [-0.2822, 1.3192, -1.3645], [0.1533, 1.5024, -1.0432],
+                         [0.4917, 1.1529, -1.3496]],
+                        [[-2.0289, 2.4952,
+                          -0.1708], [-0.7188, 0.9956, -0.5096],
+                         [-2.0668, 6.0278, -0.4875], [-1.9304, 3.3092, 0.6610],
+                         [0.0949, 1.4332, 0.3140], [-1.2879, 2.0008, -0.7791],
+                         [-0.7252, 0.9611, -0.6371], [0.4066, 1.4211, -0.2947],
+                         [0.3220, 1.4447, 0.3548], [-0.9744, 2.3856,
+                                                    -1.2000]]]).cuda()
+
+    # test dilated ball query
+    idx = ball_query_dilated(0.4, 0.2, 5, xyz, new_xyz)
+    expected_idx = torch.tensor([[[0, 5, 7, 0, 0], [6, 6, 6, 6, 6],
+                                  [2, 3, 2, 2, 2], [0, 5, 7, 0, 0],
+                                  [0, 5, 7, 0, 0]],
+                                 [[0, 0, 0, 0, 0], [2, 2, 2, 2, 2],
+                                  [7, 7, 7, 7, 7], [0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0]]]).cuda()
+    assert torch.all(idx == expected_idx)
 
 def test_grouping_points():
     if not torch.cuda.is_available():
@@ -133,6 +201,46 @@ def test_grouping_points():
 
     assert torch.allclose(output, expected_output)
 
+def test_gather_points():
+    if not torch.cuda.is_available():
+        pytest.skip()
+    features = torch.tensor([[[
+        -1.6095, -0.1029, -0.8876, -1.2447, -2.4031, 0.3708, -1.1586, -1.4967,
+        -0.4800, 0.2252
+    ],
+                              [
+                                  1.9138, 3.4979, 1.6854, 1.5631, 3.6776,
+                                  3.1154, 2.1705, 2.5221, 2.0411, 3.1446
+                              ],
+                              [
+                                  -1.4173, 0.3073, -1.4339, -1.4340, -1.2770,
+                                  -0.2867, -1.4162, -1.4044, -1.4245, -1.4074
+                              ]],
+                             [[
+                                 0.2160, 0.0842, 0.3661, -0.2749, -0.4909,
+                                 -0.6066, -0.8773, -0.0745, -0.9496, 0.1434
+                             ],
+                              [
+                                  1.3644, 1.8087, 1.6855, 1.9563, 1.2746,
+                                  1.9662, 0.9566, 1.8778, 1.1437, 1.3639
+                              ],
+                              [
+                                  -0.7172, 0.1692, 0.2241, 0.0721, -0.7540,
+                                  0.0462, -0.6227, 0.3223, -0.6944, -0.5294
+                              ]]]).cuda()
+
+    idx = torch.tensor([[0, 1, 4, 0, 0, 0], [0, 5, 6, 0, 0, 0]]).int().cuda()
+
+    output = gather_operation(features, idx)
+    expected_output = torch.tensor(
+        [[[-1.6095, -0.1029, -2.4031, -1.6095, -1.6095, -1.6095],
+          [1.9138, 3.4979, 3.6776, 1.9138, 1.9138, 1.9138],
+          [-1.4173, 0.3073, -1.2770, -1.4173, -1.4173, -1.4173]],
+         [[0.2160, -0.6066, -0.8773, 0.2160, 0.2160, 0.2160],
+          [1.3644, 1.9662, 0.9566, 1.3644, 1.3644, 1.3644],
+          [-0.7172, 0.0462, -0.6227, -0.7172, -0.7172, -0.7172]]]).cuda()
+
+    assert torch.allclose(output, expected_output)
 
 if __name__ == '__main__':
     test_fps()

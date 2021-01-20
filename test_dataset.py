@@ -17,7 +17,7 @@ def my_worker_init_fn(worker_id):
 cfg_from_file("configs/kitti/3dssd/3dssd.yaml")
 dataset_func = choose_dataset()
 dataset = dataset_func('loading', split="training", img_list="train", is_training=True)
-dataloader = DataLoader(dataset, batch_size=1, shuffle=True, num_workers=6, worker_init_fn=my_worker_init_fn,  collate_fn=dataset.load_batch)
+dataloader = DataLoader(dataset, batch_size=2, shuffle=True, num_workers=6, worker_init_fn=my_worker_init_fn,  collate_fn=dataset.load_batch)
 assigner = TargetAssigner(0)
 model_func = choose_model()
 model = model_func(1, is_training=True).cuda()

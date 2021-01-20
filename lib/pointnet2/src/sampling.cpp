@@ -53,7 +53,7 @@ int furthest_point_sampling_with_dist_wrapper(int b, int n, int m,
     int *idx = idx_tensor.data<int>();
 
     cudaStream_t stream = c10::cuda::getCurrentCUDAStream();
-    furthest_point_sampling_kernel_launcher(b, n, m, points, temp, idx, stream);
+    furthest_point_sampling_with_dist_kernel_launcher(b, n, m, points, temp, idx, stream);
     return 1;
 }
 
