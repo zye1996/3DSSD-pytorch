@@ -1,7 +1,7 @@
 import torch
 import pytest
 
-from lib.pointnet2.pointnet2_utils import FurthestPointSampling, furthest_point_sample_with_dist, \
+from lib.pointnet2.pointnet2_utils import furthest_point_sample, furthest_point_sample_with_dist, \
                                           BallQuery, grouping_operation, gather_operation, ball_query_dilated
 
 
@@ -17,9 +17,10 @@ def test_fps():
                          [0.8164, 4.0081, -0.1839], [-1.1000, 3.0213, -0.8205],
                          [-0.0518, 3.7251, -0.3950]]]).cuda()
 
-    idx = FurthestPointSampling.apply(xyz, 3)
+    idx = furthest_point_sample(xyz, 3)
     expected_idx = torch.tensor([[0, 2, 4], [0, 2, 1]]).cuda()
     assert torch.all(idx == expected_idx)
+
 
 def test_fps_with_dist():
     if not torch.cuda.is_available():
@@ -89,6 +90,7 @@ def test_ball_query():
                                   [0, 0, 0, 0, 0]]]).cuda()
     assert torch.all(idx == expected_idx)
 
+
 def test_ball_query_dilated():
     if not torch.cuda.is_available():
         pytest.skip()
@@ -128,6 +130,7 @@ def test_ball_query_dilated():
                                   [7, 7, 7, 7, 7], [0, 0, 0, 0, 0],
                                   [0, 0, 0, 0, 0]]]).cuda()
     assert torch.all(idx == expected_idx)
+
 
 def test_grouping_points():
     if not torch.cuda.is_available():
@@ -241,6 +244,7 @@ def test_gather_points():
           [-0.7172, 0.0462, -0.6227, -0.7172, -0.7172, -0.7172]]]).cuda()
 
     assert torch.allclose(output, expected_output)
+
 
 if __name__ == '__main__':
     test_fps()

@@ -11,6 +11,7 @@ import numpy as np
 import torch
 from lib.builder.target_assigner import TargetAssigner
 # Init datasets and dataloaders
+
 def my_worker_init_fn(worker_id):
     np.random.seed(np.random.get_state()[1][0] + worker_id)
 

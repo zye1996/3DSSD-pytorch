@@ -84,7 +84,6 @@ class trainer:
         self.dataset = dataset_func('loading', split=args.split, img_list=args.img_list, is_training=self.is_training)
         self.dataloader = DataLoader(self.dataset, batch_size=self.batch_size*self.gpu_num, shuffle=True, num_workers=self.num_workers, worker_init_fn=my_worker_init_fn,  collate_fn=self.dataset.load_batch)
         self.logger.info('**** Dataset length is %d ****' % len(self.dataset))
-        print(type(next(iter(self.dataloader))))
 
         # models
         self.model_func = choose_model()
@@ -93,16 +92,9 @@ class trainer:
 
         # tensorboard
         self.tb_log = SummaryWriter(log_dir=os.path.join(self.log_dir, 'tensorboard'))
-        sample = next(iter(self.dataloader))
-        sample.pop('sample_name')
-        for key in sample:
-            if isinstance(sample[key], torch.Tensor):
-                sample[key] = sample[key].cuda()
-        print(sample.keys())
-        self.tb_log.add_graph(self.model, sample)
 
         # optimizer
-        self.optimizer = optim.Adam(self.model.parameters(), lr=cfg.SOLVER.BASE_LR)
+        self.optimizer = optim.AdamW(self.model.parameters(), lr=cfg.SOLVER.BASE_LR)
         self.lr_scheduler = LRScheduler(self.optimizer)
 
         # load from checkpoint

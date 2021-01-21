@@ -60,9 +60,9 @@ class Vote_layer(nn.Module):
 
         min_offset = torch.tensor(cfg.MODEL.MAX_TRANSLATE_RANGE).float().view(1, 1, 3).repeat((points.shape[0], points.shape[1], 1)).to(points.device)
 
-        limited_ctr_offsets = torch.where(ctr_offsets < min_offset, ctr_offsets, min_offset)
+        limited_ctr_offsets = torch.where(ctr_offsets < min_offset, min_offset, ctr_offsets)
         min_offset = -1 * min_offset
-        limited_ctr_offsets = torch.where(limited_ctr_offsets > min_offset, limited_ctr_offsets, min_offset)
+        limited_ctr_offsets = torch.where(limited_ctr_offsets > min_offset, min_offset, limited_ctr_offsets)
         xyz = xyz + limited_ctr_offsets
         return xyz, points, ctr_offsets
 
@@ -173,7 +173,7 @@ class Pointnet_sa_module_msg(nn.Module):
                 features_for_fps = torch.cat([tmp_xyz, tmp_points], dim=-1)
                 # dist1 = nn_distance(tmp_xyz, tmp_xyz)
                 # dist2 = calc_square_dist(tmp_xyz, tmp_xyz, norm=False)
-                features_for_fps_distance = calc_square_dist(features_for_fps, features_for_fps)
+                features_for_fps_distance = calc_square_dist(features_for_fps, features_for_fps, norm=False)
                 features_for_fps_distance = features_for_fps_distance.contiguous()
                 fps_idx_1 = pointnet2_utils.furthest_point_sample_with_dist(features_for_fps_distance, npoint)
                 fps_idx_2 = pointnet2_utils.furthest_point_sample(tmp_xyz, npoint)
@@ -182,7 +182,7 @@ class Pointnet_sa_module_msg(nn.Module):
                 fps_idx = torch.arange(npoint).int().view(1, npoint).repeat((bs, 1)).to(tmp_xyz.device)
             elif fps_method == 'F-FPS':
                 features_for_fps = torch.cat([tmp_xyz, tmp_points], dim=-1)
-                features_for_fps_distance = calc_square_dist(features_for_fps, features_for_fps)
+                features_for_fps_distance = calc_square_dist(features_for_fps, features_for_fps, norm=False)
                 features_for_fps_distance = features_for_fps_distance.contiguous()
                 fps_idx = pointnet2_utils.furthest_point_sample_with_dist(features_for_fps_distance, npoint)
             else: # D-FPS

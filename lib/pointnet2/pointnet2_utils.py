@@ -8,24 +8,33 @@ import pointnet2_cuda as pointnet2
 
 
 class FurthestPointSampling(Function):
-    @staticmethod
-    def forward(ctx, xyz: torch.Tensor, npoint: int) -> torch.Tensor:
-        """
-        Uses iterative furthest point sampling to select a set of npoint features that have the largest
-        minimum distance
-        :param ctx:
-        :param xyz: (B, N, 3) where N > npoint
-        :param npoint: int, number of features in the sampled set
-        :return:
-             output: (B, npoint) tensor containing the set
-        """
-        assert xyz.is_contiguous()
+    """Furthest Point Sampling.
 
-        B, N, _ = xyz.size()
-        output = torch.cuda.IntTensor(B, npoint)
+    Uses iterative furthest point sampling to select a set of features whose
+    corresponding points have the furthest distance.
+    """
+
+    @staticmethod
+    def forward(ctx, points_xyz: torch.Tensor,
+                num_points: int) -> torch.Tensor:
+        """forward.
+
+        Args:
+            points_xyz (Tensor): (B, N, 3) where N > num_points.
+            num_points (int): Number of points in the sampled set.
+
+        Returns:
+             Tensor: (B, num_points) indices of the sampled points.
+        """
+        assert points_xyz.is_contiguous()
+
+        B, N, _ = points_xyz.size()
+        output = torch.cuda.IntTensor(B, num_points)
         temp = torch.cuda.FloatTensor(B, N).fill_(1e10)
 
-        pointnet2.furthest_point_sampling_wrapper(B, N, npoint, xyz, temp, output)
+        pointnet2.furthest_point_sampling_wrapper(
+            B, N, num_points, points_xyz, temp, output)
+        ctx.mark_non_differentiable(output)
         return output
 
     @staticmethod
@@ -37,24 +46,33 @@ furthest_point_sample = FurthestPointSampling.apply
 
 
 class FurthestPointSamplingWithDist(Function):
+    """Furthest Point Sampling With Distance.
+
+    Uses iterative furthest point sampling to select a set of features whose
+    corresponding points have the furthest distance.
+    """
+
     @staticmethod
-    def forward(ctx, xyz: torch.Tensor, npoint: int) -> torch.Tensor:
-        """
-        Uses iterative furthest point sampling to select a set of npoint features that have the largest
-        minimum distance
-        :param ctx:
-        :param xyz: (B, N, N) where N > npoint
-        :param npoint: int, number of features in the sampled set
-        :return:
-             output: (B, npoint) tensor containing the set
-        """
-        assert xyz.is_contiguous()
+    def forward(ctx, points_dist: torch.Tensor,
+                num_points: int) -> torch.Tensor:
+        """forward.
 
-        B, N, _ = xyz.size()
-        output = torch.cuda.IntTensor(B, npoint)
-        temp = torch.cuda.FloatTensor(B, N).fill_(1e10)
+        Args:
+            points_dist (Tensor): (B, N, N) Distance between each point pair.
+            num_points (int): Number of points in the sampled set.
 
-        pointnet2.furthest_point_sampling_with_dist_wrapper(B, N, npoint, xyz, temp, output)
+        Returns:
+             Tensor: (B, num_points) indices of the sampled points.
+        """
+        assert points_dist.is_contiguous()
+
+        B, N, _ = points_dist.size()
+        output = points_dist.new_zeros([B, num_points], dtype=torch.int32)
+        temp = points_dist.new_zeros([B, N]).fill_(1e10)
+
+        pointnet2.furthest_point_sampling_with_dist_wrapper(
+            B, N, num_points, points_dist, temp, output)
+        ctx.mark_non_differentiable(output)
         return output
 
     @staticmethod
